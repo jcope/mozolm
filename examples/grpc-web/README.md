@@ -20,8 +20,7 @@ For more information on gRPC-web and this architecture, refer
 to [State of gRPC-web](https://grpc.io/blog/state-of-grpc-web/)
 
 ## TL;DR
-linux> ./config_linux
-macOS> ./config_macos
+./config.sh
 
 ## Pre-Requisits
 [Docker](https://www.docker.com).

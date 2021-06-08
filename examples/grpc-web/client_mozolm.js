@@ -12,9 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-const {LMScores, GetContextRequest, NextState,
-       UpdateLMScoresRequest} = require('./service_pb.js');
-const {MozoLMServiceClient} = require('./service_grpc_web_pb.js');
+const { LMScores, GetContextRequest, NextState,
+       UpdateLMScoresRequest, MozoLMServiceClient } = require('@copewithjeremy/mozolm-grpc-web');
 
 window.prob_vector = [];
 window.k_best = 7;

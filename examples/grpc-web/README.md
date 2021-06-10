@@ -2,9 +2,12 @@
 This directory contains a working example of a web based gRPC client
 requesting data from a gRPC service, mozolm.
 
-The mozolm service is launched via a executable on the command line,
+The mozolm service is launched via a docker container or
+a executable on the command line,
 listing for requests on port `:9090`. The service is defined by
-protocol buffers in `lm_scores.proto` and `service.proto`.
+protocol buffers in `lm_scores.proto` and `service.proto` as found in
+the mozolm codebase. These files are used to generate js_pb stubs and
+these are packed and delivered via npm.
 
 A proxy service, Envoy, is run via `docker` and defined in `envoy.yaml`
 Here we configure Envoy to listen at port `:8080`,
@@ -24,31 +27,6 @@ to [State of gRPC-web](https://grpc.io/blog/state-of-grpc-web/)
 
 ## Pre-Requisits
 [Docker](https://www.docker.com).
-[Python3](https://www.python.org).
-
-## Build mozolm
-
-Build the [mozoLM Service Binaries](https://github.com/google-research/mozolm).
-
-```sh
-mozolm-main $ ./$BAZEL build -c opt --host_copt=-DGRPC_BAZEL_BUILD //...
-```
-
-Note: This should be mitigated, not ideal to copy and update these files.
-Copy the grpc_js compiled protobuffer files.
-
-```sh
-$ cp bazel-bin/mozolm/grpc/service_js_grpc_proto_web_pb/mozolm/grpc/service_pb.js examples/grpc-web/
-$ cp bazel-bin/mozolm/grpc/service_js_grpc_proto_web_pb/mozolm/grpc/service_grpc_web_pb.js examples/grpc-web/
-$ cp bazel-bin/mozolm/models/lm_scores_jspb_proto_pb/mozolm/models/lm_scores_pb.js examples/grpc-web/
-```
-
-Update the include paths in the generated files.
-
-```sh
-$ sed -i "" 's+../../mozolm/models+.+' service_pb.js
-$ sed -i "" 's+../../mozolm/models+.+' service_grpc_web_pb.js
-```
 
 ## Compile the Client JavaScript Code
 
@@ -57,11 +35,10 @@ can be consumed by the browser.
 
 ```sh
 $ npm install
-$ npx webpack client_mozolm.js
 ```
 
-Here we use `webpack` and give it an entry point `client.js`. You can also use
-`browserify` or other similar tools. This will resolve all the `require()`
+Here we use `webpack` with `webpack.config.js` defining the config. You can also
+use `browserify` or other similar tools. This will resolve all the `require()`
 statements and produce a `./dist/main.js` file that can be embedded in our
 `index.html` file.
 
@@ -70,15 +47,14 @@ statements and produce a `./dist/main.js` file that can be embedded in our
 We are ready to run the Hello World example. The following set of commands will
 run the 3 processes all in the background.
 
- 1. Run the mozoLM gRPC Service. This listens at port `:9090`.
+ 1. Run the mozoLM gRPC Service. This listens at port `:9090`. The service
+ expects a physical file ~/training.txt.
 
  ```sh
- $ ../../bazel-bin/mozolm/grpc/mozolm_server_async \
-    --client_server_config="server_port:\"localhost:9090\" \
-    credential_type:INSECURE server_config { model_hub_config { \
-    model_config { type:SIMPLE_CHAR_BIGRAM storage { \
-    vocabulary_file:\"$VOCAB\"  model_file:\"$COUNTS\" } } } \
-    wait_for_clients:true }"
+ $ docker run -d --init -v ~/:/data -p 9090:9090 gcr.io/mozolm-release/server_async \
+    --server_config="address_uri:\"0.0.0.0:9090\" model_hub_config { model_config { \
+      type:PPM_AS_FST storage { model_file:\"/data/training.txt\" ppm_options { \
+      max_order: 4 static_model: false } } } }"
  ```
 
  2. Run the Envoy proxy. The `envoy.yaml` file configures Envoy to listen to
@@ -90,19 +66,11 @@ run the 3 processes all in the background.
      --network=host envoyproxy/envoy:v1.17.0
  ```
 
-> NOTE: As per [this issue](https://github.com/grpc/grpc-web/issues/436):
-> if you are running Docker on Mac/Windows, remove the `--network=host` option:
->
-> ```sh
-> $ docker run -d -v "$(pwd)"/envoy.yaml:/etc/envoy/envoy.yaml:ro \
->     -p 8080:8080 -p 9901:9901 envoyproxy/envoy:v1.17.0
->  ```
-
  3. Run the simple Web Server. This hosts the static file `index.html` and
  `dist/main.js` we generated earlier.
 
  ```sh
- $ python3 -m http.server 8081 &
+ $ npm start
  ```
 
 When these are all ready, you can open a browser tab and navigate to

@@ -8,6 +8,8 @@
 
 # MozoLM
 
+[<img src="https://img.shields.io/badge/slack-@openaac-yellow.svg?logo=slack">](https://openaac.slack.com/)
+
 A language model serving library, with middleware functionality including mixing
 of probabilities from disparate base language model types and tokenizations
 along with RPC client/server interactions.

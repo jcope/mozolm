@@ -1,14 +1,6 @@
-const http = require('http');
-const fs = require('fs');
+var connect = require('connect');
+var serveStatic = require('serve-static');
 
-const hostname = '127.0.0.1';
-const port = 8081;
-
-const server = http.createServer((req, res) => {
-  res.writeHead(200, { 'content-type': 'text/html' })
-  fs.createReadStream('index.html').pipe(res)
-})
-
-server.listen(port, hostname, () => {
-  console.log(`Server running at http://${hostname}:${port}/`);
-});
+connect()
+    .use(serveStatic(__dirname))
+    .listen(8081, () => console.log('Server running on 8081...'));
